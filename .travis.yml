@@ -1,19 +1,19 @@
 language: scala
 scala:
-	- 2.11.7
+    - 2.11.7
 
 jdk:
-	- oraclejdk8
+    - oraclejdk8
 
 services:
-	- postgresql
-	- mysql
+    - postgresql
+    - mysql
 
 cache:
-	directories:
-		- vendor/bundle
-		- $HOME/.m2
-		- $HOME/.ivy2
-		- $HOME/.sbt
+    directories:
+        - vendor/bundle
+        - $HOME/.m2
+        - $HOME/.ivy2
+        - $HOME/.sbt
 
 sudo: false
