@@ -38,7 +38,7 @@ abstract class ConfigurationBuilder {
 				db.getConfig(name).flatMap { implicit entryConfig ⇒
 					(entryConfig.getString("driver"), entryConfig.getString("url")) match {
 						case (Some(driver), Some(uri)) if driver == getDriverName ⇒
-							logger.trace("Found entry configuration " + buildErrorPath(name))
+							logger.trace("Found entry configuration db." + name)
 							try {
 								parseURI(new URI(uri)).map { dbc ⇒
 									var updateableDBC = dbc
@@ -83,16 +83,16 @@ abstract class ConfigurationBuilder {
 									throw entryConfig.reportError("url", "Unable to parse provided connection URI.", Some(e))
 							}
 						case (Some(_), Some(_)) ⇒
-							logger.debug(s"Skipping ${buildErrorPath(name)}, configuration intended for another driver.")
+							logger.debug(s"Skipping db.$name; configuration intended for another driver.")
 							None
 						case (Some(driver), None) if driver == getDriverName ⇒
-							logger.error(s"Driver configuration attempted for ${buildErrorPath(name)}, but no url provided.")
+							logger.error(s"Driver configuration attempted for db.$name; but no url provided.")
 							None
 						case (None, Some(_)) ⇒
-							logger.warn(s"Possible driver configuration attempt found at ${buildErrorPath(name)}, but no driver specified.")
+							logger.warn(s"Possible driver configuration attempt found at db.$name; but no driver specified.")
 							None
 						case _ ⇒
-							logger.trace(s"Skipping ${buildErrorPath(name)}, does not appear to be a driver configuration block.")
+							logger.trace(s"Skipping db.$name; does not appear to be a driver configuration block.")
 							None
 					}
 				}.map((name, _))
@@ -158,20 +158,10 @@ abstract class ConfigurationBuilder {
 		case Some(float: Float) if float > minimum ⇒ onSuccess(setting.get)
 		case Some(double: Double) if double > minimum ⇒ onSuccess(setting.get)
 		case Some(_: Char) | Some(_: Short) | Some(_: Int) | Some(_: Long) | Some(_: Float) | Some(_: Double) ⇒
-			logger.error("Negative value encountered for " + buildErrorPath(path))
-		case None ⇒ logger.debug("No value found for " + buildErrorPath(path) + " skipping.")
+			throw conf.reportError(path, "Provided value less than " + minimum)
+		case None ⇒ logger.debug(s"No value found for $path; skipping.")
 		case _ ⇒ throw conf.reportError(path, "Unrecognized type passed in.  This is likely a programming error in db-async-play.")
 	}
-
-
-	/**
-	 * Generates a path description for error and warning messages to help them accurately present their location.
-	 * @param path where the setting came from
-	 * @param conf in which configuration
-	 * @return a path description, eg "db.default.url"
-	 */
-	protected def buildErrorPath(path: String)(implicit conf: Configuration): String =
-		conf.underlying.root.origin + path
 
 	/**
 	 * Parses out userInfo into a tuple of optional username and password

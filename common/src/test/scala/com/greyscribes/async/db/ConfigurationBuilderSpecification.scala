@@ -22,7 +22,8 @@ import com.github.mauricio.async.db.pool.PoolConfiguration
 import com.github.mauricio.async.db.{Configuration ⇒ DBConfiguration}
 import org.specs2.mock.Mockito
 import org.specs2.mutable._
-import play.api.{Configuration, Logger}
+import org.specs2.specification.core.Fragments
+import play.api.{Configuration, Logger, PlayException}
 
 
 class ConfigurationBuilderSpecification extends Specification with Mockito {
@@ -70,21 +71,20 @@ class ConfigurationBuilderSpecification extends Specification with Mockito {
 			poolConfig.validationInterval mustEqual 43
 		}
 
-		"ignore illegal settings" in {
+		"throw an exception for illegal settings" in {
 			val fakeConfigurationBuilder = new DummyConfigurationBuilder
 
-			val config = Configuration(
-				"db.asyncPool.maxObjects" → -401,
+			Fragments.foreach(Seq("db.asyncPool.maxObjects" → -401,
 				"db.asyncPool.maxIdleObjects" → -65,
 				"db.asyncPool.maxQueueSize" → -9876,
-				"db.asyncPool.validationInterval" → -43
-			)
+				"db.asyncPool.validationInterval" → -43)) { setting ⇒
+				val config = Configuration(setting)
+				val name = s"illegal ${setting._1} should throw an exception"
 
-			val poolConfig = fakeConfigurationBuilder.buildPoolConfiguration(config)
-
-			poolConfig mustEqual PoolConfiguration.Default
-
-			//there was atLeast(4)(fakeConfigurationBuilder.logger).error("")
+				name ! {
+					fakeConfigurationBuilder.buildPoolConfiguration(config) must throwA[PlayException]
+				}
+			}
 		}
 
 		"return defaults when no settings are found" in {
@@ -105,7 +105,7 @@ class ConfigurationBuilderSpecification extends Specification with Mockito {
 
 			val poolConfig = fakeConfigurationBuilder.buildPoolConfiguration(config)
 
-			poolConfig mustEqual (PoolConfiguration.Default.copy(maxObjects = 41))
+			poolConfig mustEqual PoolConfiguration.Default.copy(maxObjects = 41)
 		}
 
 	}
