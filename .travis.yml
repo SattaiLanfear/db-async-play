@@ -6,8 +6,8 @@ jdk:
 	- oraclejdk8
 
 services:
-#	- postgresql
-#	- mysql
+	- postgresql
+	- mysql
 
 cache:
 	directories:
