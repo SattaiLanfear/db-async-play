@@ -12,8 +12,7 @@ object Common {
 	val commonDependencies = Seq(
 		"com.typesafe.play" %% "play" % "2.4.+" % "provided",
 		"com.typesafe.play" %% "play-test" % "2.4.+" % "test",
-		PlayImport.specs2 % "test",
-		"org.scalaz.stream" %% "scalaz-stream" % "0.8" % "test"
+		PlayImport.specs2 % "test"
 	)
 
 	def libSettings(_name: String) = settings(_name) ++: Seq(
@@ -37,7 +36,8 @@ object Common {
 			"-Ywarn-nullary-override", // Warn when non-nullary overrides nullary, e.g. def foo() over def foo.
 			"-Ywarn-numeric-widen", // Warn when numerics are widened.
 			"-Ywarn-unused"
-		)
+		),
+		resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 	)
 
 }
