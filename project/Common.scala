@@ -13,6 +13,7 @@ object Common {
 		"com.typesafe.play" %% "play" % "2.4.+" % "provided",
 		"com.typesafe.play" %% "play-test" % "2.4.+" % "test",
 		PlayImport.specs2 % "test"
+			exclude("org.scalaz.stream", "scalaz-stream_2.11")
 	)
 
 	def libSettings(_name: String) = settings(_name) ++: Seq(
