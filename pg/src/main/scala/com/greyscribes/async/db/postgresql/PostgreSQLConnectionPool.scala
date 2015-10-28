@@ -19,66 +19,44 @@ package com.greyscribes.async.db.postgresql
 import java.net.URI
 import javax.inject.{Inject, Singleton}
 
-import com.github.mauricio.async.db.pool.{ConnectionPool, PoolConfiguration}
+import com.github.mauricio.async.db.pool.ObjectFactory
 import com.github.mauricio.async.db.postgresql.PostgreSQLConnection
 import com.github.mauricio.async.db.postgresql.pool.PostgreSQLConnectionFactory
 import com.github.mauricio.async.db.{Configuration ⇒ DBConfiguration}
-import com.greyscribes.async.db.ConfigurationBuilder
+import com.greyscribes.async.db.{ConfigurationBuilder, LifecycleBoundConnectionPoolGroup}
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.{Configuration, Logger}
 import play.core.parsers.FormUrlEncodedParser
-
-import scala.concurrent.Future
-
-
-/**
- * This class just provides a level of indirection to reduce the startup effort in parsing configuration.
- * @param factories a map of pool name to the appropriately configured factory.  A default entry is required or a
- *                  NoSuchElementException will be triggered.
- * @param poolConfig pool settings.
- */
-class PostgreSQLConnectionPoolGroup(factories: Map[String, PostgreSQLConnectionFactory], poolConfig: PoolConfiguration)
-	extends ConnectionPool[PostgreSQLConnection](factories("default"), poolConfig) {
-
-	protected val pools = (factories - "default").mapValues(new ConnectionPool(_, poolConfig)) + ("default" → this)
-
-	/**
-	 * @param pool the name of the desired pool
-	 * @return the desired pool or NoSuchElementException if there is no configured pool by that name.
-	 */
-	def apply(pool: String): ConnectionPool[PostgreSQLConnection] = pools(pool)
-
-}
 
 
 /**
  * The primary purpose of this class is to create a strong type for the dependency injector.
+ * @param config the Play Configuration from which to gather our configuration(s).
+ * @param lifecycle the Play Lifecycle object, so that this class can self-register for shutdown.
  */
 @Singleton()
 class PostgreSQLConnectionPool @Inject()(config: Configuration,
                                          lifecycle: ApplicationLifecycle)
-	extends PostgreSQLConnectionPoolGroup(
-		PostgreSQLConnectionPool.buildDBConfiguration(config).mapValues(new PostgreSQLConnectionFactory(_)),
-		PostgreSQLConnectionPool.buildPoolConfiguration(config)) {
-
-	lifecycle.addStopHook { () ⇒
-		Future.sequence(pools.values.map(_.close)).map(_ ⇒ Unit)
-	}
-}
+	extends LifecycleBoundConnectionPoolGroup[PostgreSQLConnection](config, PostgreSQLConnectionPool, lifecycle)
 
 
-object PostgreSQLConnectionPool extends ConfigurationBuilder {
+/**
+ * This companion object acts as the PostgresSQLConnection ConfigurationBuilder, providing Configuration parsing
+ * services to PostgreSQLConnectionPool.
+ */
+object PostgreSQLConnectionPool extends ConfigurationBuilder[PostgreSQLConnection] {
 
 	/**
 	 * @return the logger to use for this class
 	 */
 	override protected val logger: Logger = Logger(classOf[PostgreSQLConnectionPool])
-
 	/**
 	 * @return the name of the currently processing database driver, as it should be entered on the db.*.driver line
 	 */
-	override protected def getDriverName: String = "postgresql-async"
+	override protected val getDriverName: String = "postgresql-async"
+
+	override protected def buildFactory(config: DBConfiguration): ObjectFactory[PostgreSQLConnection] =
+		new PostgreSQLConnectionFactory(config)
 
 	/**
 	 * Used to parse the URIs that this particular DBConfigurationBuilder is interested in.
@@ -126,4 +104,3 @@ object PostgreSQLConnectionPool extends ConfigurationBuilder {
 		}
 	}
 }
-

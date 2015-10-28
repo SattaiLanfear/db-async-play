@@ -18,8 +18,8 @@ package com.greyscribes.async.db
 
 import java.net.URI
 
-import com.github.mauricio.async.db.pool.PoolConfiguration
-import com.github.mauricio.async.db.{Configuration ⇒ DBConfiguration}
+import com.github.mauricio.async.db.pool.{ObjectFactory, PoolConfiguration}
+import com.github.mauricio.async.db.{Configuration ⇒ DBConfiguration, Connection}
 import org.specs2.mock.Mockito
 import org.specs2.mutable._
 import org.specs2.specification.core.Fragments
@@ -31,22 +31,25 @@ class ConfigurationBuilderSpecification extends Specification with Mockito {
 	/**
 	 * Dummy class used to make the abstract methods visible.
 	 */
-	private class DummyConfigurationBuilder extends ConfigurationBuilder {
-		/**
-		 * @return the name of the currently processing database driver, as it should be entered on the db.*.driver line
-		 */
+	private class DummyConfigurationBuilder extends ConfigurationBuilder[Connection] {
+
 		override protected def getDriverName: String = "dummy"
 
-		/**
-		 * Used to parse the URIs that this particular DBConfigurationBuilder is interested in.
-		 * @param uri the source URI
-		 */
-		override protected def parseURI(uri: URI): Option[DBConfiguration] = None
+		override protected def parseURI(uri: URI): Option[DBConfiguration] = {
+			val user = parseUserInfo(Option(uri.getUserInfo))
+			Some(
+				DBConfiguration(
+					username = user._1.getOrElse("auser"),
+					password = user._2,
+					host = uri.getHost,
+					database = Option(uri.getPath)
+				)
+			)
+		}
 
-		/**
-		 * @return the logger to use for this class
-		 */
 		override protected[db] def logger: Logger = mock[Logger]
+
+		override protected def buildFactory(config: DBConfiguration): ObjectFactory[Connection] = mock[ObjectFactory[Connection]]
 	}
 
 
@@ -139,5 +142,63 @@ class ConfigurationBuilderSpecification extends Specification with Mockito {
 		}
 	}
 
+	"The ConfigurationBuilder Configuration Group Generator" should {
+
+		"throw an exception when no configuration is provided" in {
+			val fakeConfigurationBuilder = new DummyConfigurationBuilder
+
+			fakeConfigurationBuilder.getConfigurationGroup(Configuration()) must throwA[PlayException]
+		}
+
+		"accept a single connection and make it default even if it was not marked default" in {
+			val fakeConfigurationBuilder = new DummyConfigurationBuilder
+
+			val cg = fakeConfigurationBuilder.getConfigurationGroup(Configuration(
+				"db.test.driver" → "dummy",
+				"db.test.url" → "dummy://localhost/database",
+				"db.test.username" → "user"
+			))
+
+			cg.defaultName mustEqual ("test")
+			cg.others must beEmpty
+		}
+
+		"exception if there are multiple defaults" in {
+			val fakeConfigurationBuilder = new DummyConfigurationBuilder
+
+			fakeConfigurationBuilder.getConfigurationGroup(Configuration(
+				"db.test.driver" → "dummy",
+				"db.test.url" → "dummy://localhost/database",
+				"db.test.username" → "user",
+				"db.test.default" → true,
+				"db.test2.driver" → "dummy",
+				"db.test2.url" → "dummy://localhost/database",
+				"db.test2.username" → "user",
+				"db.test2.default" → true
+			)) must throwA[PlayException]
+		}
+
+		"correctly select the default" in {
+			val fakeConfigurationBuilder = new DummyConfigurationBuilder
+
+			val cg = fakeConfigurationBuilder.getConfigurationGroup(Configuration(
+				"db.test.driver" → "dummy",
+				"db.test.url" → "dummy://localhost/database",
+				"db.test.username" → "user",
+				"db.test2.driver" → "dummy",
+				"db.test2.url" → "dummy://localhost/database",
+				"db.test2.username" → "user",
+				"db.test2.default" → true,
+				"db.test3.driver" → "dummy",
+				"db.test3.url" → "dummy://localhost/database",
+				"db.test3.username" → "user"
+			))
+
+			cg.defaultName mustEqual ("test2")
+			cg.others.keys must contain("test", "test3")
+		}
+
+		// More detailed testing is done on specific full implementations
+	}
 
 }

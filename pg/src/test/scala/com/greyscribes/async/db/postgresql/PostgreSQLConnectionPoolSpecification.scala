@@ -18,6 +18,8 @@ package com.greyscribes.async.db.postgresql
 
 import java.net.URI
 
+import com.github.mauricio.async.db.pool.ConnectionPool
+import com.github.mauricio.async.db.postgresql.PostgreSQLConnection
 import com.github.mauricio.async.db.{Configuration ⇒ DBConfiguration}
 import org.specs2.mock.Mockito
 import org.specs2.mutable._
@@ -106,14 +108,14 @@ class PostgreSQLConnectionPoolSpecification extends Specification with Mockito {
 			val config = getConfig("just default.conf")
 			val dbConfig = buildDBConfiguration(config)
 
-			dbConfig("default") mustEqual DBConfiguration(
+			dbConfig("default") mustEqual ((DBConfiguration(
 				//postgresql://user:password@localhost:432/dbname
 				username = "user",
 				password = Some("password"),
 				host = "localhost",
 				port = 432,
 				database = Some("dbname")
-			)
+			), false))
 		}
 
 		"ignore other drivers" in {
@@ -127,7 +129,7 @@ class PostgreSQLConnectionPoolSpecification extends Specification with Mockito {
 			val config = getConfig("settings overrides.conf")
 			val dbConfig = buildDBConfiguration(config)
 
-			dbConfig("default") mustEqual DBConfiguration(
+			dbConfig("default") mustEqual ((DBConfiguration(
 				//postgresql://user:password@localhost:432/dbname
 				username = "overrideuname",
 				password = Some("overridepassword"),
@@ -138,7 +140,7 @@ class PostgreSQLConnectionPoolSpecification extends Specification with Mockito {
 				connectTimeout = 12.seconds,
 				testTimeout = 6.seconds,
 				queryTimeout = Some(10.seconds)
-			)
+			), false))
 		}
 
 		"throw a PlayException on a bad URI" in {
@@ -157,32 +159,32 @@ class PostgreSQLConnectionPoolSpecification extends Specification with Mockito {
 
 			dbConfig.contains("someoneElse") aka "contains the wrong driver's data" must beFalse
 
-			dbConfig("default") mustEqual DBConfiguration(
+			dbConfig("default") mustEqual ((DBConfiguration(
 				//postgresql://user:password@localhost:432/dbname
 				username = "user",
 				password = Some("password"),
 				host = "localhost",
 				port = 432,
 				database = Some("dbname")
-			)
+			), false))
 
-			dbConfig("oranges") mustEqual DBConfiguration(
+			dbConfig("oranges") mustEqual ((DBConfiguration(
 				//postgresql://user:password@localhost:432/orangedb
 				username = "user",
 				password = Some("password"),
 				host = "localhost",
 				port = 432,
 				database = Some("orangedb")
-			)
+			), false))
 
-			dbConfig("blues") mustEqual DBConfiguration(
+			dbConfig("blues") mustEqual ((DBConfiguration(
 				//postgresql://blueuser:password@localhost:432/bluedb
 				username = "blueuser",
 				password = Some("password"),
 				host = "localhost",
 				port = 432,
 				database = Some("bluedb")
-			)
+			), true))
 		}
 
 	}
@@ -210,6 +212,17 @@ class PostgreSQLConnectionPoolSpecification extends Specification with Mockito {
 			pool must haveClass[PostgreSQLConnectionPool]
 
 			pool("default") must be(pool)
+		}
+
+		"successfully manage a pool group" in {
+			val injector = getInjector("multiple.conf")
+			val pool = injector.instanceOf[PostgreSQLConnectionPool]
+
+			pool("blues") must be(pool)
+
+			pool("default") must beAnInstanceOf[ConnectionPool[PostgreSQLConnection]]
+			pool("oranges") must beAnInstanceOf[ConnectionPool[PostgreSQLConnection]]
+			pool("someoneElse") must throwA[NoSuchElementException]
 		}
 	}
 
