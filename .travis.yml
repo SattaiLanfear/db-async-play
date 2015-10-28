@@ -16,4 +16,7 @@ cache:
         - $HOME/.ivy2
         - $HOME/.sbt
 
+before_script:
+    - ./scripts/test_setup.sh
+
 sudo: false
