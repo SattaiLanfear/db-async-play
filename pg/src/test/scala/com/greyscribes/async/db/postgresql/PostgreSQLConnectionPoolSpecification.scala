@@ -23,12 +23,11 @@ import com.github.mauricio.async.db.postgresql.PostgreSQLConnection
 import com.github.mauricio.async.db.{Configuration ⇒ DBConfiguration}
 import org.specs2.mock.Mockito
 import org.specs2.mutable._
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{Configuration, Environment, PlayException}
 
 import scala.concurrent.duration._
 
-class PostgreSQLConnectionPoolSpecification extends Specification with Mockito {
+class PostgreSQLConnectionPoolSpecification extends Specification with Mockito with Injecting {
 
 	"The PostgreSQLConnectionPool uri parser" should {
 		import PostgreSQLConnectionPool._
@@ -191,16 +190,6 @@ class PostgreSQLConnectionPoolSpecification extends Specification with Mockito {
 
 
 	"Play's Dependency Injection System" should {
-		def getInjector(file: String, config: (String, String)*) = {
-			val env = Environment.simple()
-			val conf = Configuration.load(env, Map("config.resource" → file))
-
-			new GuiceApplicationBuilder()
-				.in(env)
-				.configure(conf)
-				.configure(config: _*)
-				.injector()
-		}
 
 		"successfully locate PostgreSQLConnectionPool" in {
 			val injector = getInjector("just default.conf")
