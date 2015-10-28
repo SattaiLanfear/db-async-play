@@ -16,21 +16,36 @@
 
 package com.greyscribes.async.db.postgresql
 
+import org.specs2.execute.{AsResult, Result}
+import org.specs2.mutable.Around
+import org.specs2.specification.Scope
+import play.api.inject.DefaultApplicationLifecycle
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{Configuration, Environment}
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 /**
  * Support trait used to enable multiple tests to easily use a play injector.
  */
-trait Injecting {
-	def getInjector(file: String, config: (String, String)*) = {
+abstract class Injecting(val confFile: String, val config: (String, String)*) extends Around with Scope {
+
+	lazy val injector = {
 		val env = Environment.simple()
-		val conf = Configuration.load(env, Map("config.resource" → file))
+		val conf = Configuration.load(env, Map("config.resource" → confFile))
 
 		new GuiceApplicationBuilder()
 			.in(env)
 			.configure(conf)
 			.configure(config: _*)
 			.injector()
+	}
+
+	override def around[T: AsResult](t: ⇒ T): Result = {
+		try AsResult.effectively(t)
+		finally {
+			Await.ready(injector.instanceOf[DefaultApplicationLifecycle].stop(), 10.seconds)
+		}
 	}
 }

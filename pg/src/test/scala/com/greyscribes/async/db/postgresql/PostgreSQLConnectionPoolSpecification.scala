@@ -27,7 +27,7 @@ import play.api.{Configuration, Environment, PlayException}
 
 import scala.concurrent.duration._
 
-class PostgreSQLConnectionPoolSpecification extends Specification with Mockito with Injecting {
+class PostgreSQLConnectionPoolSpecification extends Specification with Mockito {
 
 	"The PostgreSQLConnectionPool uri parser" should {
 		import PostgreSQLConnectionPool._
@@ -191,9 +191,7 @@ class PostgreSQLConnectionPoolSpecification extends Specification with Mockito w
 
 	"Play's Dependency Injection System" should {
 
-		"successfully locate PostgreSQLConnectionPool" in {
-			val injector = getInjector("just default.conf")
-
+		"successfully locate PostgreSQLConnectionPool" in new Injecting("just default.conf") {
 			val pool = injector.instanceOf[PostgreSQLConnectionPool]
 
 			pool must not beNull
@@ -203,8 +201,7 @@ class PostgreSQLConnectionPoolSpecification extends Specification with Mockito w
 			pool("default") must be(pool)
 		}
 
-		"successfully manage a pool group" in {
-			val injector = getInjector("multiple.conf")
+		"successfully manage a pool group" in new Injecting("multiple.conf") {
 			val pool = injector.instanceOf[PostgreSQLConnectionPool]
 
 			pool("blues") must be(pool)
@@ -214,6 +211,4 @@ class PostgreSQLConnectionPoolSpecification extends Specification with Mockito w
 			pool("someoneElse") must throwA[NoSuchElementException]
 		}
 	}
-
-
 }
