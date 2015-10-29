@@ -201,7 +201,7 @@ class PostgreSQLConnectionPoolSpecification extends Specification with Mockito {
 			pool("default") must be(pool)
 		}
 
-		"successfully manage a pool group" in new Injecting("multiple.conf") {
+		"successfully initialize a pool group" in new Injecting("multiple.conf") {
 			val pool = injector.instanceOf[PostgreSQLConnectionPool]
 
 			pool("blues") must be(pool)
