@@ -76,7 +76,7 @@ object PostgreSQLConnectionPool extends ConfigurationBuilder[PostgreSQLConnectio
 					password = userInfo._2,
 					host = Option(uri.getHost).getOrElse("localhost"),
 					port = port,
-					database = Option(uri.getPath).map(_.stripPrefix("/"))
+					database = Option(uri.getPath).map(_.stripPrefix("/")).filterNot(_.isEmpty)
 				))
 			case "jdbc" ⇒
 				uri.getSchemeSpecificPart match {
