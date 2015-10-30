@@ -122,19 +122,19 @@ abstract class ConfigurationBuilder[T <: Connection] {
 									for(pass ← entryConfig.getString("password"))
 										updateableDBC = updateableDBC.copy(password = Some(pass).filterNot(_.isEmpty))
 
-									ensurePositiveValue(maxMessageSize, entryConfig.getBytes(maxMessageSize)) { mms ⇒
+									ensureMinimumValue(maxMessageSize, entryConfig.getBytes(maxMessageSize)) { mms ⇒
 										updateableDBC = updateableDBC.copy(maximumMessageSize = mms.toInt)
 									}
 
-									ensurePositiveValue(connectTimeout, entryConfig.getMilliseconds(connectTimeout)) { ct ⇒
+									ensureMinimumValue(connectTimeout, entryConfig.getMilliseconds(connectTimeout)) { ct ⇒
 										updateableDBC = updateableDBC.copy(connectTimeout = ct.milliseconds)
 									}
 
-									ensurePositiveValue(testTimeout, entryConfig.getMilliseconds(testTimeout)) { tt ⇒
+									ensureMinimumValue(testTimeout, entryConfig.getMilliseconds(testTimeout)) { tt ⇒
 										updateableDBC = updateableDBC.copy(testTimeout = tt.milliseconds)
 									}
 
-									ensurePositiveValue(queryTimeout, entryConfig.getMilliseconds(queryTimeout)) { qt ⇒
+									ensureMinimumValue(queryTimeout, entryConfig.getMilliseconds(queryTimeout)) { qt ⇒
 										updateableDBC = updateableDBC.copy(queryTimeout = Some(qt.milliseconds))
 									}
 
@@ -183,19 +183,19 @@ abstract class ConfigurationBuilder[T <: Connection] {
 		config.getConfig("db.asyncPool").foreach { implicit dbConfig ⇒
 
 
-			ensurePositiveValue(poolMaxObjects, dbConfig.getInt(poolMaxObjects)) { mo ⇒
+			ensureMinimumValue(poolMaxObjects, dbConfig.getInt(poolMaxObjects)) { mo ⇒
 				finalPoolConf = finalPoolConf.copy(maxObjects = mo)
 			}
 
-			ensurePositiveValue(poolMaxIdleObjects, dbConfig.getLong(poolMaxIdleObjects)) { mio ⇒
+			ensureMinimumValue(poolMaxIdleObjects, dbConfig.getLong(poolMaxIdleObjects)) { mio ⇒
 				finalPoolConf = finalPoolConf.copy(maxIdle = mio)
 			}
 
-			ensurePositiveValue(poolMaxQueueSize, dbConfig.getInt(poolMaxQueueSize)) { mqs ⇒
+			ensureMinimumValue(poolMaxQueueSize, dbConfig.getInt(poolMaxQueueSize)) { mqs ⇒
 				finalPoolConf = finalPoolConf.copy(maxQueueSize = mqs)
 			}
 
-			ensurePositiveValue(poolValidationInterval, dbConfig.getMilliseconds(poolValidationInterval)) { vi ⇒
+			ensureMinimumValue(poolValidationInterval, dbConfig.getMilliseconds(poolValidationInterval)) { vi ⇒
 				finalPoolConf = finalPoolConf.copy(validationInterval = vi)
 			}
 		}
@@ -204,7 +204,7 @@ abstract class ConfigurationBuilder[T <: Connection] {
 	}
 
 	/**
-	 * Ensures that the provided optional value is at least a minimum, by default 0.
+	 * Ensures that the provided optional value is at least a minimum, inclusive.  By default, 1 or higher.
 	 * @param path the source of the field.
 	 * @param setting the value of the field.
 	 * @param minimum the minimum value of the field
@@ -212,13 +212,13 @@ abstract class ConfigurationBuilder[T <: Connection] {
 	 * @param conf the configuration from which the value was drawn
 	 * @tparam X a value class.
 	 */
-	private def ensurePositiveValue[X <: AnyVal](path: String, setting: Option[X], minimum: Long = 0)(onSuccess: X ⇒ Unit)(implicit conf: Configuration): Unit = setting match {
-		case Some(char: Char) if char > minimum ⇒ onSuccess(setting.get)
-		case Some(short: Short) if short > minimum ⇒ onSuccess(setting.get)
-		case Some(int: Int) if int > minimum ⇒ onSuccess(setting.get)
-		case Some(long: Long) if long > minimum ⇒ onSuccess(setting.get)
-		case Some(float: Float) if float > minimum ⇒ onSuccess(setting.get)
-		case Some(double: Double) if double > minimum ⇒ onSuccess(setting.get)
+	protected def ensureMinimumValue[X <: AnyVal](path: String, setting: Option[X], minimum: Long = 1)(onSuccess: X ⇒ Unit)(implicit conf: Configuration): Unit = setting match {
+		case Some(char: Char) if char >= minimum ⇒ onSuccess(setting.get)
+		case Some(short: Short) if short >= minimum ⇒ onSuccess(setting.get)
+		case Some(int: Int) if int >= minimum ⇒ onSuccess(setting.get)
+		case Some(long: Long) if long >= minimum ⇒ onSuccess(setting.get)
+		case Some(float: Float) if float >= minimum ⇒ onSuccess(setting.get)
+		case Some(double: Double) if double >= minimum ⇒ onSuccess(setting.get)
 		case Some(_: Char) | Some(_: Short) | Some(_: Int) | Some(_: Long) | Some(_: Float) | Some(_: Double) ⇒
 			throw conf.reportError(path, "Provided value less than " + minimum)
 		case None ⇒ logger.debug(s"No value found for $path; skipping.")
