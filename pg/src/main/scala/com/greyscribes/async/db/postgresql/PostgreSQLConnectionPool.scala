@@ -67,12 +67,16 @@ object PostgreSQLConnectionPool extends ConfigurationBuilder[PostgreSQLConnectio
 		(uri.getScheme match {
 			case "postgresql" ⇒
 				val userInfo = parseUserInfo(Option(uri.getUserInfo))
+				var port = uri.getPort
+				if(port < 0) {
+					port = 5432
+				}
 
 				Some(DBConfiguration(
 					username = userInfo._1.getOrElse("postgres"),
 					password = userInfo._2,
 					host = Option(uri.getHost).getOrElse("localhost"),
-					port = Option(uri.getPort).getOrElse(5432),
+					port = port,
 					database = Option(uri.getPath).map(_.stripPrefix("/"))
 				))
 			case "jdbc" ⇒
