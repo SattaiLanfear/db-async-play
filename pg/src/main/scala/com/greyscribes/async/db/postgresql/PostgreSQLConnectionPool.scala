@@ -19,7 +19,6 @@ package com.greyscribes.async.db.postgresql
 import java.net.URI
 import javax.inject.{Inject, Singleton}
 
-import com.github.mauricio.async.db.pool.ObjectFactory
 import com.github.mauricio.async.db.postgresql.PostgreSQLConnection
 import com.github.mauricio.async.db.postgresql.pool.PostgreSQLConnectionFactory
 import com.github.mauricio.async.db.{Configuration ⇒ DBConfiguration}
@@ -55,7 +54,7 @@ object PostgreSQLConnectionPool extends ConfigurationBuilder[PostgreSQLConnectio
 	 */
 	override protected val getDriverName: String = "postgresql-async"
 
-	override protected def buildFactory(config: DBConfiguration): ObjectFactory[PostgreSQLConnection] =
+	override protected def buildFactory(config: DBConfiguration): PostgreSQLConnectionFactory =
 		new PostgreSQLConnectionFactory(config)
 
 	/**
