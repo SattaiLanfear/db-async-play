@@ -21,6 +21,7 @@ import java.net.URI
 import com.github.mauricio.async.db.pool.ConnectionPool
 import com.github.mauricio.async.db.postgresql.PostgreSQLConnection
 import com.github.mauricio.async.db.{Configuration ⇒ DBConfiguration}
+import com.greyscribes.async.db.Injecting
 import org.specs2.mock.Mockito
 import org.specs2.mutable._
 import play.api.{Configuration, Environment, PlayException}

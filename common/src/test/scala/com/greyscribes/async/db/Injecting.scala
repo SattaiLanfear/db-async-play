@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.greyscribes.async.db.postgresql
+package com.greyscribes.async.db
 
 import org.specs2.execute.{AsResult, Result}
 import org.specs2.mutable.Around

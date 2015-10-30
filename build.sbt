@@ -7,10 +7,10 @@ lazy val common = (project in file("common"))
 
 
 lazy val postgresql = (project in file("pg"))
-	.dependsOn(common)
+	.dependsOn(common % "compile->compile;test->test")
 
 lazy val mysql = (project in file("mysql"))
-	.dependsOn(common)
+	.dependsOn(common % "compile->compile;test->test")
 
 
 libraryDependencies ++= Common.commonDependencies

@@ -17,6 +17,7 @@
 package com.greyscribes.async.db.postgresql
 
 import com.github.mauricio.async.db.QueryResult
+import com.greyscribes.async.db.Injecting
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable._
