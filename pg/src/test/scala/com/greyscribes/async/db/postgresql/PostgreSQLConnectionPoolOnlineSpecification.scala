@@ -47,7 +47,7 @@ class PostgreSQLConnectionPoolOnlineSpecification extends Specification with Moc
 					numbers.foldLeft(Future.successful[QueryResult](null)) { (prev, num) ⇒
 						prev.flatMap(_ ⇒ c.sendPreparedStatement("INSERT INTO magic_numbers VALUES (?)", Array(num)))
 					}
-				}.map(result ⇒ result.rows mustEqual (1)).awaitFor(numbers.size.seconds)
+				}.map(result ⇒ result.rowsAffected mustEqual (1)).awaitFor(numbers.size.seconds)
 
 
 				// Deliberately intermix beta initialization
@@ -55,7 +55,7 @@ class PostgreSQLConnectionPoolOnlineSpecification extends Specification with Moc
 					colors.foldLeft(Future.successful[QueryResult](null)) { (prev, color) ⇒
 						prev.flatMap(_ ⇒ c.sendPreparedStatement("INSERT INTO magic_colors VALUES (?)", Array(color)))
 					}
-				}.map(result ⇒ result.rows mustEqual (1)).awaitFor(colors.size.seconds)
+				}.map(result ⇒ result.rowsAffected mustEqual (1)).awaitFor(colors.size.seconds)
 
 
 				// Verify Inserts
