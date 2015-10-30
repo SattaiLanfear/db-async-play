@@ -1,0 +1,228 @@
+/*
+ * Copyright 2015 Stephen Couchman
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.greyscribes.async.db.mysql
+
+import java.net.URI
+
+import com.github.mauricio.async.db.pool.ConnectionPool
+import com.github.mauricio.async.db.{Configuration ⇒ DBConfiguration}
+import com.greyscribes.async.db.Injecting
+import org.specs2.mock.Mockito
+import org.specs2.mutable._
+import play.api.{Configuration, Environment, PlayException}
+
+import scala.concurrent.duration._
+
+class MySQLConnectionPoolSpecification extends Specification with Mockito {
+
+	"The MySQLConnectionPool uri parser" should {
+		import MySQLConnectionPool._
+
+		"recognise a mysql:// uri" in {
+			parseURI(new URI("mysql://localhost:425/dbname")) mustEqual Some(DBConfiguration(
+				username = "root",
+				database = Some("dbname"),
+				port = 425,
+				host = "localhost"
+			))
+		}
+
+		"recognize a jdbc:mysql:// uri" in {
+			parseURI(new URI("jdbc:mysql://localhost:425/dbname")) mustEqual Some(DBConfiguration(
+				username = "root",
+				database = Some("dbname"),
+				port = 425,
+				host = "localhost"
+			))
+		}
+
+		"pull the username and password from URI credentials" in {
+			parseURI(new URI("jdbc:mysql://user:password@localhost:425/dbname")) mustEqual Some(DBConfiguration(
+				username = "user",
+				password = Some("password"),
+				database = Some("dbname"),
+				port = 425,
+				host = "localhost"
+			))
+		}
+
+		"pull the username and password from query string" in {
+			parseURI(new URI("jdbc:mysql://localhost:425/dbname?user=user&password=password")) mustEqual Some(DBConfiguration(
+				username = "user",
+				password = Some("password"),
+				database = Some("dbname"),
+				port = 425,
+				host = "localhost"
+			))
+		}
+
+		// Included for consistency, so later changes aren't allowed to change behavior
+		"use the query string parameters to override URI credentials" in {
+			parseURI(new URI("jdbc:mysql://baduser:badpass@localhost:425/dbname?user=user&password=password")) mustEqual Some(DBConfiguration(
+				username = "user",
+				password = Some("password"),
+				database = Some("dbname"),
+				port = 425,
+				host = "localhost"
+			))
+		}
+
+		"successfully default the port to the MySQL port" in {
+			parseURI(new URI("jdbc:mysql://baduser:badpass@localhost/dbname?user=user&password=password")) mustEqual Some(DBConfiguration(
+				username = "user",
+				password = Some("password"),
+				database = Some("dbname"),
+				port = 3306,
+				host = "localhost"
+			))
+		}
+
+		"successfully specify the connect timeout via query string" in {
+			parseURI(new URI("jdbc:mysql://localhost:425/dbname?user=user&password=password&connectTimeout=10")) mustEqual Some(DBConfiguration(
+				username = "user",
+				password = Some("password"),
+				database = Some("dbname"),
+				port = 425,
+				host = "localhost",
+				connectTimeout = 10.milliseconds
+			))
+		}
+	}
+
+	private def getConfig(file: String) =
+		Configuration.load(Environment.simple(), Map("config.resource" → file))
+
+	"The PostgreSQLConnectionPoolSpecification" should {
+		"ensure test resources are correctly placed" in {
+			val conf = getConfig("resource test.conf")
+			conf.getString("testKey") mustEqual Some("testValue")
+		}
+	}
+
+
+	"The PostgreSQLConnectionPool Database Configuration Builder" should {
+		import MySQLConnectionPool._
+
+		"successfully read a single default configuration" in {
+			val config = getConfig("just default.conf")
+			val dbConfig = buildDBConfiguration(config)
+
+			dbConfig("default") mustEqual ((DBConfiguration(
+				//mysql://user:password@localhost:432/dbname
+				username = "user",
+				password = Some("password"),
+				host = "localhost",
+				port = 432,
+				database = Some("dbname")
+			), false))
+		}
+
+		"ignore other drivers" in {
+			val config = getConfig("ignore other drivers.conf")
+			val dbConfig = buildDBConfiguration(config)
+
+			dbConfig must beEmpty
+		}
+
+		"handle settings overrides" in {
+			val config = getConfig("settings overrides.conf")
+			val dbConfig = buildDBConfiguration(config)
+
+			dbConfig("default") mustEqual ((DBConfiguration(
+				//mysql://user:password@localhost:432/dbname
+				username = "overrideuname",
+				password = Some("overridepassword"),
+				host = "localhost",
+				port = 432,
+				database = Some("dbname"),
+				maximumMessageSize = 1024 * 1024 * 24,
+				connectTimeout = 12.seconds,
+				testTimeout = 6.seconds,
+				queryTimeout = Some(10.seconds)
+			), false))
+		}
+
+		"throw a PlayException on a bad URI" in {
+			val config = getConfig("bad uri.conf")
+			buildDBConfiguration(config) must throwA[PlayException]
+		}
+
+		"throw a PlayException on a bad charset" in {
+			val config = getConfig("bad charset.conf")
+			buildDBConfiguration(config) must throwA[PlayException]
+		}
+
+		"successfully read multiple configurations from a single config" in {
+			val config = getConfig("multiple.conf")
+			val dbConfig = buildDBConfiguration(config)
+
+			dbConfig.contains("someoneElse") aka "contains the wrong driver's data" must beFalse
+
+			dbConfig("default") mustEqual ((DBConfiguration(
+				//mysql://user:password@localhost:432/dbname
+				username = "user",
+				password = Some("password"),
+				host = "localhost",
+				port = 432,
+				database = Some("dbname")
+			), false))
+
+			dbConfig("oranges") mustEqual ((DBConfiguration(
+				//mysql://user:password@localhost:432/dbname
+				username = "user",
+				password = Some("password"),
+				host = "localhost",
+				port = 432,
+				database = Some("orangedb")
+			), false))
+
+			dbConfig("blues") mustEqual ((DBConfiguration(
+				//mysql://blueuser:password@localhost:432/bluedb
+				username = "blueuser",
+				password = Some("password"),
+				host = "localhost",
+				port = 432,
+				database = Some("bluedb")
+			), true))
+		}
+
+	}
+
+
+	"Play's Dependency Injection System" should {
+
+		"successfully locate PostgreSQLConnectionPool" in new Injecting("just default.conf") {
+			val pool = injector.instanceOf[MySQLConnectionPool]
+
+			pool must not beNull
+
+			pool must haveClass[MySQLConnectionPool]
+
+			pool("default") must be(pool)
+		}
+
+		"successfully initialize a pool group" in new Injecting("multiple.conf") {
+			val pool = injector.instanceOf[MySQLConnectionPool]
+
+			pool("blues") must be(pool)
+
+			pool("default") must beAnInstanceOf[ConnectionPool[MySQLConnectionPool]]
+			pool("oranges") must beAnInstanceOf[ConnectionPool[MySQLConnectionPool]]
+			pool("someoneElse") must throwA[NoSuchElementException]
+		}
+	}
+}
