@@ -87,6 +87,16 @@ class PostgreSQLConnectionPoolSpecification extends Specification with Mockito {
 				host = "localhost"
 			))
 		}
+
+		"successfully default the port to the PostgreSQL port" in {
+			parseURI(new URI("jdbc:postgresql://baduser:badpass@localhost/dbname?user=user&password=password")) mustEqual Some(DBConfiguration(
+				username = "user",
+				password = Some("password"),
+				database = Some("dbname"),
+				port = 5432,
+				host = "localhost"
+			))
+		}
 	}
 
 	private def getConfig(file: String) =
