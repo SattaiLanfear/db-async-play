@@ -59,16 +59,16 @@ abstract class ConfigurationBuilder[T <: Connection] {
 		val defaults = configurations.filter(_._2._2)
 
 		if(defaults.size > 1)
-			throw config.reportError("db", s"Too many defaults found for $getDriverName.")
+			throw config.reportError("db", s"Too many defaults found for $getName.")
 
 		// Settle on a default to use
 		val default = defaults.headOption.orElse {
-			logger.warn(s"No default specified for $getDriverName, using first (possibly randomly determined) configuration.")
+			logger.warn(s"No default specified for $getName, using first (possibly randomly determined) configuration.")
 			configurations.headOption
 		}.map(p ⇒
 			(p._1, p._2._1)
 		).getOrElse {
-			throw config.reportError("db", s"No configurations found for $getDriverName")
+			throw config.reportError("db", s"No configurations found for $getName")
 		}
 
 		ConfigurationGroup(
@@ -98,8 +98,8 @@ abstract class ConfigurationBuilder[T <: Connection] {
 			// Keys, rejecting those groups we know belong to other settings
 			(db.subKeys -- skippedKeys).flatMap { name ⇒
 				db.getConfig(name).flatMap { implicit entryConfig ⇒
-					(entryConfig.getString("driver"), entryConfig.getString("url")) match {
-						case (Some(driver), Some(uri)) if driver == getDriverName ⇒
+					(entryConfig.getString("asyncDriver"), entryConfig.getString("url")) match {
+						case (Some(driver), Some(uri)) if driver == getName ⇒
 							logger.trace("Found entry configuration db." + name)
 							try {
 								parseURI(new URI(uri)).map { dbc ⇒
@@ -144,14 +144,11 @@ abstract class ConfigurationBuilder[T <: Connection] {
 								case e: URISyntaxException ⇒
 									throw entryConfig.reportError("url", "Unable to parse provided connection URI.", Some(e))
 							}
-						case (Some(_), Some(_)) ⇒
+						case (_, Some(_)) ⇒
 							logger.debug(s"Skipping db.$name; configuration intended for another driver.")
 							None
-						case (Some(driver), None) if driver == getDriverName ⇒
+						case (Some(driver), None) if driver == getName ⇒
 							logger.error(s"Driver configuration attempted for db.$name; but no url provided.")
-							None
-						case (None, Some(_)) ⇒
-							logger.warn(s"Possible driver configuration attempt found at db.$name; but no driver specified.")
 							None
 						case _ ⇒
 							logger.trace(s"Skipping db.$name; does not appear to be a driver configuration block.")
@@ -251,7 +248,7 @@ abstract class ConfigurationBuilder[T <: Connection] {
 	/**
 	 * @return the name of the currently processing database driver, as it should be entered on the db.*.driver line
 	 */
-	protected def getDriverName: String
+	protected def getName: String
 
 	/**
 	 * Used to parse the URIs that this particular DBConfigurationBuilder is interested in.

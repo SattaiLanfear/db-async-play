@@ -52,7 +52,7 @@ object PostgreSQLConnectionPool extends ConfigurationBuilder[PostgreSQLConnectio
 	/**
 	 * @return the name of the currently processing database driver, as it should be entered on the db.*.driver line
 	 */
-	override protected val getDriverName: String = "postgresql-async"
+	override protected val getName: String = "postgresql-async"
 
 	override protected def buildFactory(config: DBConfiguration): PostgreSQLConnectionFactory =
 		new PostgreSQLConnectionFactory(config)

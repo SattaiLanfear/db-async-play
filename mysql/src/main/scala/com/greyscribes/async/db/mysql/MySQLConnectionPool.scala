@@ -54,7 +54,7 @@ object MySQLConnectionPool extends ConfigurationBuilder[MySQLConnection] {
 	/**
 	 * @return the name of the currently processing database driver, as it should be entered on the db.*.driver line
 	 */
-	override protected val getDriverName: String = "mysql-async"
+	override protected val getName: String = "mysql-async"
 
 	override protected def buildFactory(config: DBConfiguration): MySQLConnectionFactory =
 		new MySQLConnectionFactory(config)

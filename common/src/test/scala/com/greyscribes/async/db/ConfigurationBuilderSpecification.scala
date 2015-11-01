@@ -33,7 +33,7 @@ class ConfigurationBuilderSpecification extends Specification with Mockito {
 	 */
 	private class DummyConfigurationBuilder extends ConfigurationBuilder[Connection] {
 
-		override protected def getDriverName: String = "dummy"
+		override protected def getName: String = "dummy"
 
 		override protected def parseURI(uri: URI): Option[DBConfiguration] = {
 			val user = parseUserInfo(Option(uri.getUserInfo))
@@ -154,7 +154,7 @@ class ConfigurationBuilderSpecification extends Specification with Mockito {
 			val fakeConfigurationBuilder = new DummyConfigurationBuilder
 
 			val cg = fakeConfigurationBuilder.getConfigurationGroup(Configuration(
-				"db.test.driver" → "dummy",
+				"db.test.asyncDriver" → "dummy",
 				"db.test.url" → "dummy://localhost/database",
 				"db.test.username" → "user"
 			))
@@ -167,29 +167,46 @@ class ConfigurationBuilderSpecification extends Specification with Mockito {
 			val fakeConfigurationBuilder = new DummyConfigurationBuilder
 
 			fakeConfigurationBuilder.getConfigurationGroup(Configuration(
-				"db.test.driver" → "dummy",
+				"db.test.asyncDriver" → "dummy",
 				"db.test.url" → "dummy://localhost/database",
 				"db.test.username" → "user",
 				"db.test.default" → true,
-				"db.test2.driver" → "dummy",
+				"db.test2.asyncDriver" → "dummy",
 				"db.test2.url" → "dummy://localhost/database",
 				"db.test2.username" → "user",
 				"db.test2.default" → true
 			)) must throwA[PlayException]
 		}
 
+		"ignore incorrect drivers" in {
+			val fakeConfigurationBuilder = new DummyConfigurationBuilder
+
+			val cg = fakeConfigurationBuilder.getConfigurationGroup(Configuration(
+				"db.test1.driver" → "com.dummy.Driver",
+				"db.test1.asyncDriver" → "dummy",
+				"db.test1.url" → "dummy://localhost/database",
+				"db.test1.username" → "user",
+				"db.test2.driver" → "com.dummy.Driver",
+				"db.test2.url" → "dummy://localhost/database",
+				"db.test2.username" → "user"
+			))
+
+			cg.defaultName mustEqual ("test1")
+			cg.others.keys must beEmpty
+		}
+
 		"correctly select the default" in {
 			val fakeConfigurationBuilder = new DummyConfigurationBuilder
 
 			val cg = fakeConfigurationBuilder.getConfigurationGroup(Configuration(
-				"db.test.driver" → "dummy",
+				"db.test.asyncDriver" → "dummy",
 				"db.test.url" → "dummy://localhost/database",
 				"db.test.username" → "user",
-				"db.test2.driver" → "dummy",
+				"db.test2.asyncDriver" → "dummy",
 				"db.test2.url" → "dummy://localhost/database",
 				"db.test2.username" → "user",
 				"db.test2.default" → true,
-				"db.test3.driver" → "dummy",
+				"db.test3.asyncDriver" → "dummy",
 				"db.test3.url" → "dummy://localhost/database",
 				"db.test3.username" → "user"
 			))
