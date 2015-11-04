@@ -16,7 +16,31 @@ object Common {
 	)
 
 	def libSettings(_name: String) = settings(_name) ++: Seq(
-		crossScalaVersions := "2.11.7" :: Nil
+		crossScalaVersions := "2.11.7" :: Nil,
+		// Begin publish settings
+		publishMavenStyle := true,
+		publishTo <<= version { v: String ⇒
+			val nexus = "https://oss.sonatype.org/"
+			if(v.trim.endsWith("SNAPSHOT"))
+				Some("snapshots" at nexus + "content/repositories/snapshots")
+			else
+				Some("releases" at nexus + "service/local/staging/deploy/maven2")
+		},
+		pomIncludeRepository := { _ ⇒ false },
+		licenses := Seq("APACHE-2.0" → url("http://www.apache.org/licenses/LICENSE-2.0")),
+		homepage := Some(url("https://github.com/SattaiLanfear/db-async-play")),
+		pomExtra :=
+				<scm>
+					<url>git@github.com:SattaiLanfear/db-async-play.git</url>
+					<connection>scm:git:git@github.com:SattaiLanfear/db-async-play.git</connection>
+				</scm>
+						<developers>
+							<developer>
+								<id>SattaiLanfear</id>
+								<name>Stephen Couchman</name>
+								<url>https://github.com/SattaiLanfear</url>
+							</developer>
+						</developers>
 	)
 
 	def settings(_name: String) = Seq(
