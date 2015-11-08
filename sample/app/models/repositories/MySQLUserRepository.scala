@@ -165,8 +165,8 @@ class MySQLUserRepository @Inject()(_pool: MySQLConnectionPool, _srandom: Secure
 
 object MySQLUserRepository {
 
-	protected def getOneUser(rows: Option[ResultSet]): User =
-		rows.flatMap(rows ⇒ rows.headOption.map(mapToUser(_)))
+	protected def getOneUser(rs: Option[ResultSet]): User =
+		rs.flatMap(rows ⇒ rows.headOption.map(mapToUser))
 			.getOrElse(throw new UserNotFound)
 
 

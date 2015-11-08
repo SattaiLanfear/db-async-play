@@ -23,7 +23,7 @@ import play.api.Configuration
 import scala.concurrent.{ExecutionContext, Future}
 
 
-abstract class ConnectionPoolGroup[T <: Connection](default: ObjectFactory[T],
+class ConnectionPoolGroup[T <: Connection](default: ObjectFactory[T],
                                                     defaultName: String,
                                                     others: Map[String, ObjectFactory[T]],
                                                     poolConfig: PoolConfiguration)

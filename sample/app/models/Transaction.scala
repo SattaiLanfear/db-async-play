@@ -22,7 +22,50 @@ import org.joda.time.DateTime
 	* A transaction made by a user.
 	*/
 case class Transaction(id: Long,
-                       to: Long,
-                       from: Long,
-                       change: BigDecimal,
+                       to: Option[Long],
+                       from: Option[Long],
+                       change: Long,
                        timestamp: DateTime)
+
+object Transaction {
+
+	/**
+		* Finds the current value of the provided group of transactions, from the perspective of the specified user.
+		* @param id the user id to use as the perspective source.
+		* @param transactions the transactions to examine.
+		* @return the total value.
+		*/
+	def sumAs(id: Long, transactions: Transaction*): Long =
+		transactions.foldLeft(0l) { (total, current) ⇒
+			current match {
+				case Transaction(_, Some(`id`), _, change, _) ⇒ total + change
+				case Transaction(_, _, Some(`id`), change, _) ⇒ total - change
+				case _ ⇒ total
+			}
+		}
+
+	def totalGains(id: Long, transactions: Transaction*): Long =
+		transactions.foldLeft(0l) { (total, current) ⇒
+			current match {
+				case Transaction(_, Some(`id`), _, change, _) ⇒ total + change
+				case _ ⇒ total
+			}
+		}
+
+	def totalLosses(id: Long, transactions: Transaction*): Long =
+		transactions.foldLeft(0l) { (total, current) ⇒
+			current match {
+				case Transaction(_, _, Some(`id`), change, _) ⇒ total + change
+				case _ ⇒ total
+			}
+		}
+
+	def gainsAndLosses(id: Long, transactions: Transaction*): (Long, Long) =
+		transactions.foldLeft((0l, 0l)) { (totals, current) ⇒
+			current match {
+				case Transaction(_, Some(`id`), _, change, _) ⇒ totals.copy(_1 = totals._1 + change)
+				case Transaction(_, _, Some(`id`), change, _) ⇒ totals.copy(_2 = totals._2 + change)
+				case _ ⇒ totals
+			}
+		}
+}

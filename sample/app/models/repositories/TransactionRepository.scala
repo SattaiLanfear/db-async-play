@@ -33,7 +33,7 @@ abstract class TransactionRepository {
 		* @param ec the execution context to use while preparing the response.
 		* @return the newly created transaction.
 		*/
-	def transfer(to: Long, from: Long, change: BigDecimal)(implicit ec: ExecutionContext): Future[Transaction]
+	def transfer(to: Long, from: Long, change: Long)(implicit ec: ExecutionContext): Future[Transaction]
 
 	/**
 		* Finds all transactions with the specified user either in the To or From columns.
@@ -50,6 +50,6 @@ abstract class TransactionRepository {
 		* @param ec the execution context to use while preparing the response.
 		* @return the number of changed rows, and the number of deleted rows.
 		*/
-	def deleteFor(user: Long)(implicit ec: ExecutionContext): Future[(Int, Int)]
+	def deleteFor(user: Long)(implicit ec: ExecutionContext): Future[(Long, Long)]
 
 }
