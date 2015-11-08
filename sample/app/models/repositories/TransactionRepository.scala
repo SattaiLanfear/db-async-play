@@ -16,6 +16,7 @@
 
 package models.repositories
 
+import com.google.inject.ImplementedBy
 import models.Transaction
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,6 +24,7 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
 	* An interface to the Transaction storage facility.
 	*/
+@ImplementedBy(classOf[PostgreSQLTransactionRepository])
 abstract class TransactionRepository {
 
 	/**
