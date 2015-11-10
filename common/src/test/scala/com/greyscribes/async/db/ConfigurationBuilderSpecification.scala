@@ -215,6 +215,23 @@ class ConfigurationBuilderSpecification extends Specification with Mockito {
 			cg.others.keys must contain("test", "test3")
 		}
 
+		"ignore non-db entries" in {
+			val fakeConfigurationBuilder = new DummyConfigurationBuilder
+
+			val cg = fakeConfigurationBuilder.getConfigurationGroup(Configuration(
+				"db.test.asyncDriver" → "dummy",
+				"db.test.url" → "dummy://localhost/database",
+				"db.test.username" → "user",
+				"db.x" → "this is a string!",
+				"db.otherConfig.x" → "This isn't ours",
+				"db.otherConfig.y" → "Nor is This",
+				"db.otherConfig.z" → 42
+			))
+
+			cg.defaultName mustEqual ("test")
+			cg.others must beEmpty
+		}
+
 		// More detailed testing is done on specific full implementations
 	}
 
