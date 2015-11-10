@@ -49,6 +49,15 @@ class PostgreSQLConnectionPoolSpecification extends Specification with Mockito {
 			))
 		}
 
+		"recognise a postgres:// uri" in {
+			parseURI(new URI("postgres://localhost:425/dbname")) mustEqual Some(DBConfiguration(
+				username = "postgres",
+				database = Some("dbname"),
+				port = 425,
+				host = "localhost"
+			))
+		}
+
 		"recognize a jdbc:postgresql:// uri" in {
 			parseURI(new URI("jdbc:postgresql://localhost:425/dbname")) mustEqual Some(DBConfiguration(
 				username = "postgres",
