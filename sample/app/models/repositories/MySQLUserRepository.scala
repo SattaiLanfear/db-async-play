@@ -175,7 +175,8 @@ object MySQLUserRepository {
 			id = row("id").asInstanceOf[Long],
 			name = row("name").toString,
 			password = row("password").toString,
-			lastLogin = row("lastlogin").asInstanceOf[DateTime]
+			lastLogin = row("lastlogin").asInstanceOf[DateTime],
+			balance = row("balance").asInstanceOf[Long]
 		)
 
 }

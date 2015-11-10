@@ -25,11 +25,13 @@ import org.mindrot.jbcrypt.BCrypt
 	* @param name the User's name.
 	* @param password the user's BCrypt'd password
 	* @param lastLogin the last time the user logged in.
+	* @param balance the user's current balance.
 	*/
 case class User(id: Long,
                 name: String,
                 password: String,
-                lastLogin: DateTime) {
+                lastLogin: DateTime,
+                balance: Long) {
 
 	/**
 		* Checks the user's password.

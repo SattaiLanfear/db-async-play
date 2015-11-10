@@ -2,8 +2,23 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# Home page
+# Method    Path                Implementation
+GET         /                   controllers.Application.summary
+
+GET         /view               controllers.Application.viewTransactions
+
+GET         /login              controllers.Application.login
+POST        /login              controllers.Application.login
+
+GET         /transact           controllers.Application.createTransaction
+POST        /transact           controllers.Application.createTransaction
+
+GET         /users/             controllers.Application.viewUsers
+GET         /users/:id          controllers.Application.viewUser(id: Long)
+
+
 
 
 # Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
+GET     /public/*file       controllers.ApplicationAssets.public(path="/public/lib/monitor", file: Asset)
+GET	    /lib/*file          controllers.ApplicationAssets.lib(path="/public/lib", file: Asset)

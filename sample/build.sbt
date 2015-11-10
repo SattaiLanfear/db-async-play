@@ -7,7 +7,7 @@ libraryDependencies ++= Common.commonDependencies ++: Seq(
 	"org.postgresql" % "postgresql" % "9.4-1202-jdbc42",
 	"org.flywaydb" %% "flyway-play" % "2.2.0",
 	"de.svenkubiak" % "jBCrypt" % "0.4",
-	"org.webjars" % "bootstrap" % "3.3.5"
+	"org.webjars" % "html5shiv" % "3.7.3"
 )
 
 // Play provides two styles of routers, one expects its actions to be injected, the
