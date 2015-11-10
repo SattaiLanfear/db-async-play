@@ -64,7 +64,7 @@ object PostgreSQLConnectionPool extends ConfigurationBuilder[PostgreSQLConnectio
 	override protected[postgresql] def parseURI(uri: URI): Option[DBConfiguration] = {
 		val simplePGDB = "^postgresql:(\\w+)$".r
 		(uri.getScheme match {
-			case "postgresql" ⇒
+			case "postgresql" | "postgres" ⇒
 				val userInfo = parseUserInfo(Option(uri.getUserInfo))
 				var port = uri.getPort
 				if(port < 0) {
