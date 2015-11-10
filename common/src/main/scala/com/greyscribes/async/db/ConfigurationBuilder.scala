@@ -24,30 +24,31 @@ import com.github.mauricio.async.db.{Configuration ⇒ DBConfiguration, Connecti
 import play.api.{Configuration, Logger}
 
 import scala.concurrent.duration._
+import scala.util.Try
 
 /**
- * This class sorts out the default connection factory from the others and is primarily used to construct the type-specific
- * Pools.
- * @param default the default ObjectFactory
- * @param defaultName the name for the default, used when looking it up within itself.
- * @param others all other ObjectFactories for this connection type, associated with their name.
- * @tparam T the type of Connection the ConnectionPoolGroup will be expected to use.
- */
+	* This class sorts out the default connection factory from the others and is primarily used to construct the type-specific
+	* Pools.
+	* @param default the default ObjectFactory
+	* @param defaultName the name for the default, used when looking it up within itself.
+	* @param others all other ObjectFactories for this connection type, associated with their name.
+	* @tparam T the type of Connection the ConnectionPoolGroup will be expected to use.
+	*/
 case class ConfigurationGroup[T <: Connection](default: ObjectFactory[T],
                                                defaultName: String,
                                                others: Map[String, ObjectFactory[T]])
 
 
 /**
- * Common base code for pulling DB configuration out of the Play configuration.
- */
+	* Common base code for pulling DB configuration out of the Play configuration.
+	*/
 abstract class ConfigurationBuilder[T <: Connection] {
 
 	/**
-	 * Assembles a ConfigurationGroup for the identified driver, out of the provided configuration data.
-	 * @param config the Play Configuration data.
-	 * @return a ConfigurationGroup, or a PlayException if we are unable to select a default.
-	 */
+		* Assembles a ConfigurationGroup for the identified driver, out of the provided configuration data.
+		* @param config the Play Configuration data.
+		* @return a ConfigurationGroup, or a PlayException if we are unable to select a default.
+		*/
 	def getConfigurationGroup(config: Configuration): ConfigurationGroup[T] = {
 		// Get the configurations as factories
 		val configurations = buildDBConfiguration(config)
@@ -80,24 +81,24 @@ abstract class ConfigurationBuilder[T <: Connection] {
 	}
 
 	/**
-	 * @param config the database connection configuration.
-	 * @return a factory appropriate for this type of Builder based on the provided configuration.
-	 */
+		* @param config the database connection configuration.
+		* @return a factory appropriate for this type of Builder based on the provided configuration.
+		*/
 	protected def buildFactory(config: DBConfiguration): ObjectFactory[T]
 
 
 	/**
-	 * Constructs a set of Configuration objects based on teh provided Play configuration, specific to the driver
-	 * specified in getDriverName.
-	 * @param config the Play Configuration from which to draw the database settings.
-	 * @return Configuration objects paired with whether or not they had default: true in their configuration, mapped with
-	 *         their configured names.
-	 */
+		* Constructs a set of Configuration objects based on teh provided Play configuration, specific to the driver
+		* specified in getDriverName.
+		* @param config the Play Configuration from which to draw the database settings.
+		* @return Configuration objects paired with whether or not they had default: true in their configuration, mapped with
+		*         their configured names.
+		*/
 	def buildDBConfiguration(config: Configuration): Map[String, (DBConfiguration, Boolean)] = {
 		config.getConfig("db").map { db ⇒
 			// Keys, rejecting those groups we know belong to other settings
-			(db.subKeys -- skippedKeys).flatMap { name ⇒
-				db.getConfig(name).flatMap { implicit entryConfig ⇒
+			db.subKeys.flatMap { name ⇒
+				Try(db.getConfig(name)).toOption.flatten.flatMap { implicit entryConfig ⇒
 					(entryConfig.getString("asyncDriver"), entryConfig.getString("url")) match {
 						case (Some(driver), Some(uri)) if driver == getName ⇒
 							logger.trace("Found entry configuration db." + name)
@@ -169,11 +170,11 @@ abstract class ConfigurationBuilder[T <: Connection] {
 
 
 	/**
-	 * Builds a PoolConfiguration, using the library defaults to start with, and allowing settings in application.conf to override.
-	 *
-	 * @param config - the application configuration file
-	 * @return a PoolConfiguration for the driver(s).
-	 */
+		* Builds a PoolConfiguration, using the library defaults to start with, and allowing settings in application.conf to override.
+		*
+		* @param config - the application configuration file
+		* @return a PoolConfiguration for the driver(s).
+		*/
 	def buildPoolConfiguration(config: Configuration): PoolConfiguration = {
 		var finalPoolConf = PoolConfiguration.Default
 
@@ -201,14 +202,14 @@ abstract class ConfigurationBuilder[T <: Connection] {
 	}
 
 	/**
-	 * Ensures that the provided optional value is at least a minimum, inclusive.  By default, 1 or higher.
-	 * @param path the source of the field.
-	 * @param setting the value of the field.
-	 * @param minimum the minimum value of the field
-	 * @param onSuccess a block to evaluate if the field meets the minimum requested
-	 * @param conf the configuration from which the value was drawn
-	 * @tparam X a value class.
-	 */
+		* Ensures that the provided optional value is at least a minimum, inclusive.  By default, 1 or higher.
+		* @param path the source of the field.
+		* @param setting the value of the field.
+		* @param minimum the minimum value of the field
+		* @param onSuccess a block to evaluate if the field meets the minimum requested
+		* @param conf the configuration from which the value was drawn
+		* @tparam X a value class.
+		*/
 	protected def ensureMinimumValue[X <: AnyVal](path: String, setting: Option[X], minimum: Long = 1)(onSuccess: X ⇒ Unit)(implicit conf: Configuration): Unit = setting match {
 		case Some(char: Char) if char >= minimum ⇒ onSuccess(setting.get)
 		case Some(short: Short) if short >= minimum ⇒ onSuccess(setting.get)
@@ -223,10 +224,10 @@ abstract class ConfigurationBuilder[T <: Connection] {
 	}
 
 	/**
-	 * Parses out userInfo into a tuple of optional username and password
-	 * @param userInfo the optional user info string
-	 * @return a tuple of optional username and password
-	 */
+		* Parses out userInfo into a tuple of optional username and password
+		* @param userInfo the optional user info string
+		* @return a tuple of optional username and password
+		*/
 	protected[db] def parseUserInfo(userInfo: Option[String]): (Option[String], Option[String]) = userInfo.map(_.split(":", 2).toList) match {
 		case Some(user :: pass :: Nil) ⇒ (Some(user), Some(pass))
 		case Some(user :: Nil) ⇒ (Some(user), None)
@@ -239,26 +240,20 @@ abstract class ConfigurationBuilder[T <: Connection] {
 	private val poolMaxQueueSize = "maxQueueSize"
 	private val poolValidationInterval = "validationInterval"
 
-	private def skippedKeys = Set(
-		"asyncPool",
-		"hikaricp",
-		"bonecp"
-	)
-
 	/**
-	 * @return the name of the currently processing database driver, as it should be entered on the db.*.driver line
-	 */
+		* @return the name of the currently processing database driver, as it should be entered on the db.*.driver line
+		*/
 	protected def getName: String
 
 	/**
-	 * Used to parse the URIs that this particular DBConfigurationBuilder is interested in.
-	 * @param uri the source URI
-	 */
+		* Used to parse the URIs that this particular DBConfigurationBuilder is interested in.
+		* @param uri the source URI
+		*/
 	protected def parseURI(uri: URI): Option[DBConfiguration]
 
 	/**
-	 * @return the logger to use for this class
-	 */
+		* @return the logger to use for this class
+		*/
 	protected def logger: Logger
 
 }
