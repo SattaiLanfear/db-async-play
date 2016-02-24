@@ -1,0 +1,28 @@
+@(field: Field, label: String = "", required: Boolean = false, min: Option[Int] = None, max: Option[Int] = None, prefix: Option[String] = None, postfix: Option[String] = None)(implicit messages: Messages)
+
+<div class="form-group @if(field.hasErrors){has-error}">
+	<label class="col-sm-2 control-label" for="@field.id">@label</label>
+	<div class="col-sm-10">
+		@prefix.map { pre =>
+			<div class="input-group-addon">@pre</div>
+		}
+		<input
+			type="number"
+			id="@field.id"
+			class="form-control"
+			name="@field.name"
+			value="@field.value.getOrElse("")"
+			placeholder="@label"
+			@if(required){required}
+			@min.map{ min => min="@min"}
+			@max.map{ max => max="@max"}>
+		@postfix.map { post =>
+			<div class="input-group-addon">@post</div>
+		}
+	</div>
+	@field.error.map { error =>
+		<div class="col-sm-offset-2 col-sm-10">
+			<span class="help-inline">@Messages(error.message)</span>
+		</div>
+	}
+</div>

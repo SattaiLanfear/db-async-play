@@ -1,0 +1,46 @@
+@(user: User, targetUser: User, transactions: Seq[Transaction])(implicit req: RequestHeader, messages: Messages)
+@template("Transaction History for " + user.name, Some(user)) {
+	<div class="row">
+		<hr class="col-md-12"/>
+		<div class="col-md-offset-2 col-md-1">
+			Statement As Of:
+		</div>
+		<div class="col-md-1">
+			10/10/10
+		</div>
+		<div class="col-md-1 col-md-offset-1">
+			Last Login:
+		</div>
+		<div class="col-md-1">
+			10/10/10
+		</div>
+		<div class="col-md-1 col-md-offset-1">
+			Balance:
+		</div>
+		<div class="col-md-1">
+			@util.cash(targetUser.balance)
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-10 col-md-offset-1">
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<th>Date</th>
+						<th>Source/Destination</th>
+						<th>Change</th>
+					</tr>
+				</thead>
+				<tbody>
+					@for(transaction <- transactions) {
+						<tr>
+							<td>@transaction.timestamp</td>
+							<td>A person</td>
+							<td>@util.cash(transaction.change)</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+}

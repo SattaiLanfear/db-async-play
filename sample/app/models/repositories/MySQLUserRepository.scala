@@ -22,7 +22,7 @@ import javax.inject.Inject
 import com.github.mauricio.async.db.{Connection, ResultSet, RowData}
 import com.greyscribes.async.db.mysql.MySQLConnectionPool
 import models.User
-import org.joda.time.DateTime
+import org.joda.time.{LocalDateTime, DateTime}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -55,9 +55,26 @@ class MySQLUserRepository @Inject()(_pool: MySQLConnectionPool, _srandom: Secure
 		* @return Some containing the desired user if found, otherwise None.
 		*/
 	private def _findById(id: Long, connection: Connection = pool)(implicit ec: ExecutionContext): Future[Option[User]] =
-		connection.sendPreparedStatement("SELECT id, name, password, lastlogin FROM users WHERE id = ?", Array(id))
+		connection.sendPreparedStatement("SELECT * FROM users WHERE id = ?", Array(id))
 			.map { queryResult ⇒
 				queryResult.rows.flatMap(rows ⇒ rows.headOption.map(mapToUser))
+			}
+
+
+	/**
+		* Finds the identified users, if possible, returning as many as were found.
+		* @param ids the user identifiers.
+		* @param ec the execution context to use while preparing the response.
+		* @return A map of all found ids to their users.
+		*/
+	override def findAllById(ids: Set[Long])(implicit ec: ExecutionContext): Future[Map[Long, User]] =
+		pool.sendQuery(s"SELECT * FROM users WHERE id IN (${ids.mkString(", ")})")
+			.map { queryResult ⇒
+				queryResult.rows.map { rows ⇒
+					rows.map(mapToUser)
+				}.getOrElse(Seq.empty[User]).map { user ⇒
+					user.id → user
+				}.toMap
 			}
 
 	/**
@@ -67,7 +84,7 @@ class MySQLUserRepository @Inject()(_pool: MySQLConnectionPool, _srandom: Secure
 		* @return A future Some(user) if found, otherwise Future None.
 		*/
 	override def findByName(name: String)(implicit ec: ExecutionContext): Future[Option[User]] =
-		pool.sendPreparedStatement("SELECT id, name, password, lastlogin FROM users WHERE name = ?", Array(name))
+		pool.sendPreparedStatement("SELECT * FROM users WHERE name = ?", Array(name))
 			.map { queryResult ⇒
 				queryResult.rows.flatMap(rows ⇒ rows.headOption.map(mapToUser))
 			}
@@ -84,6 +101,27 @@ class MySQLUserRepository @Inject()(_pool: MySQLConnectionPool, _srandom: Secure
 					rows.map(mapToUser)
 				}.getOrElse(Seq.empty[User])
 			}
+
+
+	/**
+		* Updates the stored balance for the specified user.
+		* @param id the user to be updated.
+		* @param change the change in their balance.
+		* @param ec the execution context to use while preparing the response.
+		* @return the new user information.
+		*/
+	override def updateBalance(id: Long, change: Long)(implicit ec: ExecutionContext): Future[User] =
+		pool.inTransaction { c ⇒
+			c.sendPreparedStatement("UPDATE users SET balance = balance + ? WHERE id = ?", Seq(change, id))
+				.flatMap { resultSet ⇒
+					if(resultSet.rowsAffected == 0)
+						throw new UserNotFound
+					_findById(id, c)
+				}
+		}.map {
+			case Some(user) => user
+			case _ ⇒ throw new UserNotFound
+		}
 
 	/**
 		* Updates the lastLogin field to "now" for the specified user.
@@ -175,7 +213,7 @@ object MySQLUserRepository {
 			id = row("id").asInstanceOf[Long],
 			name = row("name").toString,
 			password = row("password").toString,
-			lastLogin = row("lastlogin").asInstanceOf[DateTime],
+			lastLogin = row("lastlogin").asInstanceOf[LocalDateTime].toDateTime,
 			balance = row("balance").asInstanceOf[Long]
 		)
 

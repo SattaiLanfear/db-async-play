@@ -7,10 +7,12 @@ GET         /                   controllers.Application.summary
 
 GET         /view               controllers.Application.viewTransactions
 
-GET         /login              controllers.Application.login
+GET         /login              controllers.Application.displayLogin
 POST        /login              controllers.Application.login
 
-GET         /transact           controllers.Application.createTransaction
+GET         /logout             controllers.Application.logout
+
+GET         /transact           controllers.Application.displayCreateTransaction
 POST        /transact           controllers.Application.createTransaction
 
 GET         /users/             controllers.Application.viewUsers

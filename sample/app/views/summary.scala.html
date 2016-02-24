@@ -1,36 +1,31 @@
 @(user: User)(implicit req: RequestHeader, messages: Messages)
 @template("User Summary", Some(user)) {
-<div class="row">
-    <hr class="col-md-12" />
-    <div class="col-md-offset-4 col-md-4">
-        <div class="row">
-            <div class="coll-md-2">
-                <strong>Id</strong>
-            </div>
-            <div class="coll-md-2">
-                @user.id
-            </div>
-        </div>
-        <div class="row">
-            <div class="coll-md-2">
-                <strong>Name</strong>
-            </div>
-            <div class="coll-md-2">
-                @user.name
-            </div>
-        </div>
-        <div class="row">
-            <div class="coll-md-2">
-                <strong>Balance</strong>
-            </div>
-            <div class="coll-md-2 text-@if(user.balance < 0){danger}else{success}">
-                @if(user.balance < 0) {
-                    (@{user.balance * -1})
-                } else {
-                    @user.balance
-                }
-            </div>
-        </div>
-    </div>
-</div>
+	<div class="row">
+		<div class="col-md-offset-4 col-md-4">
+			<div class="row">
+				<div class="coll-md-2">
+					<strong>Id</strong>
+				</div>
+				<div class="coll-md-2">
+					@user.id
+				</div>
+			</div>
+			<div class="row">
+				<div class="coll-md-2">
+					<strong>Name</strong>
+				</div>
+				<div class="coll-md-2">
+					@user.name
+				</div>
+			</div>
+			<div class="row">
+				<div class="coll-md-2">
+					<strong>Balance</strong>
+				</div>
+				<div class="coll-md-2 text-@if(user.balance < 0){danger}else{success}">
+					@util.cash(user.balance)
+				</div>
+			</div>
+		</div>
+	</div>
 }

@@ -35,7 +35,7 @@ abstract class TransactionRepository {
 		* @param ec the execution context to use while preparing the response.
 		* @return the newly created transaction.
 		*/
-	def transfer(to: Long, from: Long, change: Long)(implicit ec: ExecutionContext): Future[Transaction]
+	def transfer(to: Option[Long], from: Option[Long], change: Long)(implicit ec: ExecutionContext): Future[Transaction]
 
 	/**
 		* Finds all transactions with the specified user either in the To or From columns.

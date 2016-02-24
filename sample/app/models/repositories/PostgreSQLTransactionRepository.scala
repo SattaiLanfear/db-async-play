@@ -21,7 +21,7 @@ import javax.inject.Inject
 import com.github.mauricio.async.db.{ResultSet, RowData}
 import com.greyscribes.async.db.postgresql.PostgreSQLConnectionPool
 import models.Transaction
-import org.joda.time.DateTime
+import org.joda.time.{LocalDateTime, DateTime}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -42,7 +42,7 @@ class PostgreSQLTransactionRepository @Inject()(_pool: PostgreSQLConnectionPool)
 		* @param ec the execution context to use while preparing the response.
 		* @return the newly created transaction.
 		*/
-	override def transfer(to: Long, from: Long, change: Long)(implicit ec: ExecutionContext): Future[Transaction] =
+	override def transfer(to: Option[Long], from: Option[Long], change: Long)(implicit ec: ExecutionContext): Future[Transaction] =
 		pool.sendPreparedStatement("INSERT INTO transactions (\"to\", \"from\", change) VALUES (?, ?, ?) RETURNING *", Seq(to, from, change))
 			.map(qr ⇒ getOneTransaction(qr.rows))
 
@@ -93,7 +93,7 @@ object PostgreSQLTransactionRepository {
 			to = Option(row("to")).map(_.asInstanceOf[Long]),
 			from = Option(row("from")).map(_.asInstanceOf[Long]),
 			change = row("change").asInstanceOf[Long],
-			timestamp = row("timestamp").asInstanceOf[DateTime]
+			timestamp = row("timestamp").asInstanceOf[LocalDateTime].toDateTime
 		)
 
 }

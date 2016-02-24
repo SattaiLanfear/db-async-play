@@ -2,23 +2,29 @@
 
 @template("Login", None) {
 	@if(form.hasGlobalErrors) {
-		<div class="col-md-6 col-md-offset-3 alert alert-danger alert-error">
-			@for(error <- form.globalErrors) {
-				<div class="row"><strong>Error!</strong>@Messages(error.messages)</div>
-			}
+		<div class="row">
+			<div class="col-md-6 col-md-offset-3 alert alert-danger alert-error">
+				@for(error <- form.globalErrors) {
+					<strong>Error!</strong> @Messages(error.messages)
+				}
+			</div>
 		</div>
 	}
 	<div class="row">
-		@helper.form(routes.Application.login, 'enctype -> "multipart/form-data", 'class -> "form-horizontal", 'role -> "form") {
-			@helper.CSRF.formField
-			@bootstrap.text(form("name"), "Name")
-			@bootstrap.password(form("password"), "Password")
+		<div class="col-md-8 col-md-offset-2">
+			<div class="row">
+				@helper.form(routes.Application.login, 'class -> "form-horizontal", 'role -> "form") {
+					@helper.CSRF.formField
+					@bootstrap.text(form("name"), "Name")
+					@bootstrap.password(form("password"), "Password")
 
-			<div class="form-group">
-				<div class="col-sm-offset-2 col-sm-3">
-					<button type="submit" class="btn btn-default">Post!</button>
-				</div>
+					<div class="form-group">
+						<div class="col-sm-offset-2 col-sm-3">
+							<button type="submit" class="btn btn-default">Sign In/Create User!</button>
+						</div>
+					</div>
+				}
 			</div>
-		}
+		</div>
 	</div>
 }

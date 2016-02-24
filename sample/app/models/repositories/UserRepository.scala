@@ -41,13 +41,20 @@ abstract class UserRepository(private val srandom: SecureRandom) {
 	def findById(id: Long)(implicit ec: ExecutionContext): Future[Option[User]]
 
 	/**
+		* Finds the identified users, if possible, returning as many as were found.
+		* @param ids the user identifiers.
+		* @param ec the execution context to use while preparing the response.
+		* @return A map of all found ids to their users.
+		*/
+	def findAllById(ids: Set[Long])(implicit ec: ExecutionContext): Future[Map[Long, User]]
+
+	/**
 		* Finds the identified user, if present.
 		* @param name the name of the user to search for, it must match precicely.
 		* @param ec the execution context to use while preparing the response.
 		* @return A future Some(user) if found, otherwise Future None.
 		*/
 	def findByName(name: String)(implicit ec: ExecutionContext): Future[Option[User]]
-
 
 	/**
 		* Finds all of the currently registered users.
@@ -56,6 +63,15 @@ abstract class UserRepository(private val srandom: SecureRandom) {
 		*/
 	def listAll()(implicit ec: ExecutionContext): Future[Seq[User]]
 
+
+	/**
+		* Updates the stored balance for the specified user.
+		* @param id the user to be updated.
+		* @param change the change in their balance.
+		* @param ec the execution context to use while preparing the response.
+		* @return the new user information.
+		*/
+	def updateBalance(id: Long, change: Long)(implicit ec: ExecutionContext): Future[User]
 
 	/**
 		* Creates a new User with the given attributes.
